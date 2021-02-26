@@ -1,32 +1,41 @@
+/*---------------------------------------------------------------------------*/
+/* A demonstration of the eigenvalue perturbation method for uncertainty     */
+/* quantification of Large Eddy Simulations (Jofre et al. 2018)              */
+/*---------------------------------------------------------------------------*/
+
 #include<iostream>
 #include<cmath>
-#include "DSP.h"
+#include "DSP.hpp"
 
 int main() {
+  double B[3][3] = { {2,-1,0}, {-1,2,-1}, {0,-1,2} }; // PSD stress tensor
   DSP dsp;
-  double B[3][3] = { {2,4,5}, {4,0,1}, {5,1,3} };
+  dsp.biasTowards = 1; // component
+  dsp.deltaB_ = 0.1;   // magnitude
 
+  std::cout << "The original stress is:" << std::endl;
   for (int i=0; i<3; ++i) {
-    for (int j=0; j<3; ++j) 
-      dsp.A[i][j] = B[i][j];
+    for (int j=0; j<3; ++j) { 
+      dsp.A[i][j] = B[i][j]; 
+      std::cout << dsp.A[i][j] << " "; 
+    }
+    std::cout << std::endl; 
   }
-//  dsp.A[3][3] = B;
+
   dsp.diagonalize(dsp.A, dsp.Q_, dsp.D_);
   dsp.sort(dsp.Q_, dsp.D_);
   dsp.perturb(dsp.Q_, dsp.D_);
+  dsp.form_perturbed_stress(dsp.D_, dsp.Q_, dsp.A);
 
-  for (int i = 0; i < 3; i++) 
-  { 
+  std::cout << "The perturbed stress is:" << std::endl;
+  for (int i = 0; i < 3; i++) {
      for (int j = 0; j < 3; j++) 
-     { 
-       std::cout << dsp.D_[i][j] << " "; 
-     } 
+       std::cout << dsp.A[i][j] << " "; 
      std::cout << std::endl; 
   }
   return 0;
 }
 
-// constructor
 void
 DSP::diagonalize(
   const double (&A)[3][3], double (&Q)[3][3], double (&D)[3][3])
@@ -97,8 +106,8 @@ DSP::diagonalize(
     m[0]    = std::abs(o[0]);
     m[1]    = std::abs(o[1]);
     m[2]    = std::abs(o[2]);
-
-    k0      = (m[0] > m[1] && m[0] > m[2])?0: (m[1] > m[2])? 1 : 2; // index of largest element of offdiag
+    // index of largest element of offdiag
+    k0      = (m[0] > m[1] && m[0] > m[2])?0: (m[1] > m[2])? 1 : 2; 
     k1      = (k0+1)%3;
     k2      = (k0+2)%3;
     if (o[k0]==0.0) {
@@ -107,14 +116,17 @@ DSP::diagonalize(
     thet    = (D[k2][k2]-D[k1][k1])/(2.0*o[k0]);
     sgn     = (thet > 0.0)?1.0:-1.0;
     thet   *= sgn; // make it positive
-    t       = sgn /(thet +((thet < 1.E6)? std::sqrt(thet*thet+1.0):thet)) ; // sign(T)/(|T|+sqrt(T^2+1))
+    // sign(T)/(|T|+sqrt(T^2+1))
+    t       = sgn /(thet +((thet < 1.E6)? std::sqrt(thet*thet+1.0):thet)) ; 
     c       = 1.0/std::sqrt(t*t+1.0); //  c= 1/(t^2+1) , t=s/c
     if(c==1.0) {
       break;  // no room for improvement - reached machine precision.
     }
     jr[0 ]  = jr[1] = jr[2] = jr[3] = 0.0;
-    jr[k0]  = sgn*std::sqrt((1.0-c)/2.0);  // using 1/2 angle identity sin(a/2) = std::sqrt((1-cos(a))/2)
-    jr[k0] *= -1.0; // since our quat-to-matrix convention was for v*M instead of M*v
+    // using 1/2 angle identity sin(a/2) = std::sqrt((1-cos(a))/2)
+    jr[k0]  = sgn*std::sqrt((1.0-c)/2.0);  
+    // since our quat-to-matrix convention was for v*M instead of M*v
+    jr[k0] *= -1.0;
     jr[3 ]  = std::sqrt(1.0f - jr[k0] * jr[k0]);
     if(jr[3]==1.0) {
       break; // reached limits of floating point precision
@@ -135,7 +147,8 @@ void
 DSP::sort(
   double (&Q)[3][3], double (&D)[3][3])
 {
-  // Goal: sort diagonalization eigenvalues from high to low; save off row in D from high to low; reorder Q tensor accordingly
+  // Goal: sort diagonalization eigenvalues from high to low;
+  // save off row in D from high to low; reorder Q tensor accordingly
 
   for(int i = 0; i < 2; ++i) {
 
@@ -145,9 +158,13 @@ DSP::sort(
       D[0][0] = D[1][1];
       D[1][1] = tempEigenvalue;
 
-      double tempEigenvector0 = Q[0][0]; double tempEigenvector1 = Q[1][0]; double tempEigenvector2 = Q[2][0];
+      double tempEigenvector0 = Q[0][0]; 
+      double tempEigenvector1 = Q[1][0]; 
+      double tempEigenvector2 = Q[2][0];
       Q[0][0] = Q[0][1]; Q[1][0] = Q[1][1]; Q[2][0] = Q[2][1];
-      Q[0][1] = tempEigenvector0; Q[1][1] = tempEigenvector1; Q[2][1] = tempEigenvector2;
+      Q[0][1] = tempEigenvector0; 
+      Q[1][1] = tempEigenvector1; 
+      Q[2][1] = tempEigenvector2;
 
     }
 
@@ -157,12 +174,15 @@ DSP::sort(
       D[1][1] = D[2][2];
       D[2][2] = tempEigenvalue;
 
-      double tempEigenvector0 = Q[0][1]; double tempEigenvector1 = Q[1][1]; double tempEigenvector2 = Q[2][1];
+      double tempEigenvector0 = Q[0][1]; 
+      double tempEigenvector1 = Q[1][1]; 
+      double tempEigenvector2 = Q[2][1];
       Q[0][1] = Q[0][2]; Q[1][1] = Q[1][2]; Q[2][1] = Q[2][2];
-      Q[0][2] = tempEigenvector0; Q[1][2] = tempEigenvector1; Q[2][2] = tempEigenvector2;
+      Q[0][2] = tempEigenvector0; 
+      Q[1][2] = tempEigenvector1; 
+      Q[2][2] = tempEigenvector2;
 
     }
-
   }
 }
 
@@ -176,9 +196,6 @@ DSP::perturb(
   const double Lambda1 = D[0][0];
   const double Lambda2 = D[1][1];
   const double Lambda3 = D[2][2];
-  double BinvXt_[3];
-  int biasTowards = 1;
-  double deltaB_ = 1;
   if ( biasTowards == 1 ) {
     BinvXt_[0] =  2.0/3.0;
     BinvXt_[1] = -1.0/3.0;
