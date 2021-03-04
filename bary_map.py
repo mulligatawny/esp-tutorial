@@ -19,8 +19,7 @@ else:
     T = np.random.rand(3,3)
 # generate 3x3 symmetric, positive semi-definite matrix
 A = np.dot(np.transpose(T),T)
-# check realizability conditions (equation 7, 8, 9)
-print('The determinant is ', np.linalg.det(A))
+print('The matrix is\n', A)
 # compute normalized anisotropy tensor (13)
 aij = A/np.trace(A) - 1/3*np.eye(3)
 # eigendecomposition
@@ -29,7 +28,7 @@ aij = A/np.trace(A) - 1/3*np.eye(3)
 idx = w.argsort()[::-1]  
 w = w[idx]
 V = V[idx]
-print('The eigenvalues are',w)
+print('The eigenvalues of the anisotropic part are\n',w)
 print('The sum of the eigenvalues is {:.2f}'.format(np.sum(w)))
 
 # compute barycentric coordinates (17)
