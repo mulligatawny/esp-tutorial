@@ -5,7 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-state = 4
+state = 5
 if state == 1:
     T = np.eye(3)
     T[0,0] = 0.0
@@ -15,12 +15,15 @@ elif state == 2:
     T[0,0] = 0.0
 elif state == 3:
     T = np.eye(3)
-else: 
+else:
     T = np.random.rand(3,3)
-# generate 3x3 symmetric, positive semi-definite matrix
+# generate 3x3 positive semi-definite matrix
 A = np.dot(np.transpose(T),T)
-# check realizability conditions (equation 7, 8, 9)
-print('The determinant is ', np.linalg.det(A))
+# make trace elements equal and three orders of magnitude larger
+A[0,0] = A[0,0]*1e3
+A[1,1] = A[0,0]
+A[2,2] = A[0,0]
+print('The matrix is\n', A)
 # compute normalized anisotropy tensor (13)
 aij = A/np.trace(A) - 1/3*np.eye(3)
 # eigendecomposition
