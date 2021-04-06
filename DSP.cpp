@@ -1,27 +1,63 @@
 /*---------------------------------------------------------------------------*/
-/* A demonstration of the eigenvalue perturbation method for uncertainty     */
-/* quantification of Large Eddy Simulations (Jofre et al. 2018)              */
+/* Testbed for perturbation of subgrid stress anisotropy towards resolved    */
+/* stress anisotropy                                                         */
 /*---------------------------------------------------------------------------*/
 
 #include<iostream>
 #include<cmath>
-#include "DSP.hpp"
+
+void print(double (&A)[3][3]);
+void form_anisotensor(double (&A)[3][3], double (&B)[3][3]);
+
+void diagonalize(
+  const double (&A)[3][3], double (&Q)[3][3], double (&D)[3][3]);
+
+void sort(
+  double (&Q)[3][3], double (&D)[3][3]);
+
+/*
+void
+perturb(
+  double (&Q)[3][3], double (&D)[3][3])
+
+void
+form_perturbed_stress(
+  const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3])
+
+void
+matrix_matrix_multiply(
+  const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3])
+
+*/
 
 int main() {
-  double B[3][3] = { {2,-1,0}, {-1,2,-1}, {0,-1,2} }; // PSD stress tensor
-  DSP dsp;
-  dsp.biasTowards = 1; // component
-  dsp.deltaB_ = 0.1;   // magnitude
 
-  std::cout << "The original stress is:" << std::endl;
-  for (int i=0; i<3; ++i) {
-    for (int j=0; j<3; ++j) { 
-      dsp.A[i][j] = B[i][j]; 
-      std::cout << dsp.A[i][j] << " "; 
-    }
-    std::cout << std::endl; 
-  }
+  // define and declare sgs and resolved tensors
+  double S_sgs[3][3] = { {2,-1,0}, {-1,2,-1}, {0,-1,2} }; // subgrid tensor
+  double S_res[3][3] = { {24, 14, 4}, {14, 13, 17}, {4, 17, 51} }; // resolved
+  double A_sgs[3][3];
+  double A_res[3][3];
 
+  // form sgs and resolved anisotropy tensors
+  form_anisotensor(S_sgs, A_sgs);
+  form_anisotensor(S_res, A_res);
+
+  // print to check
+  print(S_res);
+  print(A_res);
+
+  // declare some matrices for the spectral decomposition
+  double Q_sgs[3][3];
+  double Q_res[3][3];
+  double D_sgs[3][3];
+  double D_res[3][3];
+
+  diagonalize(A_sgs, Q_sgs, D_sgs);
+  sort(Q_sgs, D_sgs);
+
+  print(D_sgs);
+
+  /*
   dsp.diagonalize(dsp.A, dsp.Q_, dsp.D_);
   dsp.sort(dsp.Q_, dsp.D_);
   dsp.perturb(dsp.Q_, dsp.D_);
@@ -33,11 +69,36 @@ int main() {
        std::cout << dsp.A[i][j] << " "; 
      std::cout << std::endl; 
   }
+  */
+
   return 0;
 }
 
-void
-DSP::diagonalize(
+void print(double (&A)[3][3]) {
+  for (int i=0; i<3; ++i) {
+    for (int j=0; j<3; ++j) { 
+      std::cout << A[i][j] << " "; 
+    }
+    std::cout << std::endl; 
+  }
+}
+
+
+void form_anisotensor(double (&A)[3][3], double (&B)[3][3]) {
+  double tr = A[0][0] + A[1][1] + A[2][2];
+  for (int i=0; i<3; ++i) {
+    for (int j=0; j<3; ++j) {
+      if (i==j) {
+        B[i][j] = A[i][j]/tr -1.0/3.0;
+      }
+      else {
+        B[i][j] = A[i][j]/tr;
+      }
+    }
+  }
+}
+
+void diagonalize(
   const double (&A)[3][3], double (&Q)[3][3], double (&D)[3][3])
 {
   /*
@@ -144,7 +205,7 @@ DSP::diagonalize(
 }
 
 void
-DSP::sort(
+sort(
   double (&Q)[3][3], double (&D)[3][3])
 {
   // Goal: sort diagonalization eigenvalues from high to low;
@@ -185,9 +246,9 @@ DSP::sort(
     }
   }
 }
-
+/*
 void
-DSP::perturb(
+perturb(
   double (&Q)[3][3], double (&D)[3][3])
 {
   // sgs stress eigenvalue perturbation
@@ -223,7 +284,7 @@ DSP::perturb(
 }
 
 void
-DSP::form_perturbed_stress(
+form_perturbed_stress(
   const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3])
 {
   // A = Q*D*QT
@@ -244,7 +305,7 @@ DSP::form_perturbed_stress(
 }
 
 void
-DSP::matrix_matrix_multiply(
+matrix_matrix_multiply(
   const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3])
 {
   //C = A*B
@@ -258,3 +319,4 @@ DSP::matrix_matrix_multiply(
     }
   }
 }
+*/
