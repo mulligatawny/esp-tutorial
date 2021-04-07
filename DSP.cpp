@@ -16,24 +16,24 @@ void diagonalize(
 void sort(
   double (&Q)[3][3], double (&D)[3][3]);
 
-void
-perturb(
+void perturb(
   double (&Q)[3][3], double (&D)[3][3], double (&P)[3][3]);
 
-void
-form_perturbed_stress(
+void form_perturbed_stress(
   const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3]);
 
-void
-matrix_matrix_multiply(
+void matrix_matrix_multiply(
   const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3]);
-
 
 int main() {
 
   // define and declare sgs and resolved tensors
-  double S_sgs[3][3] = { {2,-1,0}, {-1,2,-1}, {0,-1,2} }; // subgrid tensor
-  double S_res[3][3] = { {24, 14, 4}, {14, 13, 17}, {4, 17, 51} }; // resolved
+  double S_sgs[3][3] = { {2.0,-1.0,0.0}, 
+                         {-1.0,2.0,-1.0}, 
+                         {0.0,-1.0,2.0} }; 
+  double S_res[3][3] = { {24.0, 14.0, 4.0}, 
+                         {14.0, 13.0, 17.0}, 
+                         {4.0, 17.0, 51.0} }; 
   double A_sgs[3][3];
   double A_res[3][3];
 
@@ -42,7 +42,11 @@ int main() {
   form_anisotensor(S_res, A_res);
 
   // print to check
-//  print(S_res);
+  /*
+  std::cout << "The resolved anisotropy tensor is:" << std::endl;
+  print(A_res);
+  */
+  std::cout << "The sgs anisotropy tensor is:" << std::endl;
   print(A_sgs);
 
   // declare some matrices for the spectral decomposition
@@ -51,32 +55,29 @@ int main() {
   double D_sgs[3][3];
   double D_res[3][3];
 
-  diagonalize(A_sgs, Q_sgs, D_sgs);
-  sort(Q_sgs, D_sgs);
-
+  // get resolved stress eigenvalues
   diagonalize(A_res, Q_res, D_res);
   sort(Q_res, D_res);
-
-  perturb(Q_sgs, D_sgs, Q_res);
+  /*
+  std::cout << "The resolved eigenvalues are:" << std::endl;
+  print(D_res);
+  std::cout << "The resolved eigenvectors are:" << std::endl;
+  print(Q_res);
+  */
+  // get sgs stress eigenvalues
+  diagonalize(A_sgs, Q_sgs, D_sgs);
+  sort(Q_sgs, D_sgs);
+  /*
+  std::cout << "The sgs eigenvalues are:" << std::endl;
+  print(D_sgs);
+  std::cout << "The sgs eigenvectors are:" << std::endl;
+  print(Q_sgs);
+  */
+  perturb(Q_sgs, D_sgs, D_res);
   form_perturbed_stress(D_sgs, Q_sgs, A_sgs);
 
+  std::cout << "The perturbed sgs anisotropy tensor is:" << std::endl;
   print(A_sgs);  
-  
-  //print(D_sgs);
-
-  /*
-  dsp.diagonalize(dsp.A, dsp.Q_, dsp.D_);
-  dsp.sort(dsp.Q_, dsp.D_);
-  dsp.perturb(dsp.Q_, dsp.D_);
-  dsp.form_perturbed_stress(dsp.D_, dsp.Q_, dsp.A);
-
-  std::cout << "The perturbed stress is:" << std::endl;
-  for (int i = 0; i < 3; i++) {
-     for (int j = 0; j < 3; j++) 
-       std::cout << dsp.A[i][j] << " "; 
-     std::cout << std::endl; 
-  }
-  */
 
   return 0;
 }
@@ -84,7 +85,7 @@ int main() {
 void print(double (&A)[3][3]) {
   for (int i=0; i<3; ++i) {
     for (int j=0; j<3; ++j) { 
-      std::cout << std::setprecision(4) << A[i][j] << " "; 
+      std::cout << std::setprecision(8) << A[i][j] << "\t"; 
     }
     std::cout << std::endl; 
   }
@@ -270,7 +271,7 @@ perturb(
   const double L_res2 = P[1][1];
   const double L_res3 = P[2][2];
 
-  const double deltaB_ = 1.0;
+  const double deltaB_ = 0.789;
 
   // perturbed sgs eigenvalues
   const double pLambda1 = (1.0 - deltaB_)*Lambda1 + deltaB_*L_res1;
