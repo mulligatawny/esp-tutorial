@@ -5,6 +5,7 @@
 
 #include<iostream>
 #include<cmath>
+#include<iomanip>
 
 void print(double (&A)[3][3]);
 void form_anisotensor(double (&A)[3][3], double (&B)[3][3]);
@@ -15,20 +16,18 @@ void diagonalize(
 void sort(
   double (&Q)[3][3], double (&D)[3][3]);
 
-/*
 void
 perturb(
-  double (&Q)[3][3], double (&D)[3][3])
+  double (&Q)[3][3], double (&D)[3][3], double (&P)[3][3]);
 
 void
 form_perturbed_stress(
-  const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3])
+  const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3]);
 
 void
 matrix_matrix_multiply(
-  const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3])
+  const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3]);
 
-*/
 
 int main() {
 
@@ -43,8 +42,8 @@ int main() {
   form_anisotensor(S_res, A_res);
 
   // print to check
-  print(S_res);
-  print(A_res);
+//  print(S_res);
+  print(A_sgs);
 
   // declare some matrices for the spectral decomposition
   double Q_sgs[3][3];
@@ -55,7 +54,15 @@ int main() {
   diagonalize(A_sgs, Q_sgs, D_sgs);
   sort(Q_sgs, D_sgs);
 
-  print(D_sgs);
+  diagonalize(A_res, Q_res, D_res);
+  sort(Q_res, D_res);
+
+  perturb(Q_sgs, D_sgs, Q_res);
+  form_perturbed_stress(D_sgs, Q_sgs, A_sgs);
+
+  print(A_sgs);  
+  
+  //print(D_sgs);
 
   /*
   dsp.diagonalize(dsp.A, dsp.Q_, dsp.D_);
@@ -77,7 +84,7 @@ int main() {
 void print(double (&A)[3][3]) {
   for (int i=0; i<3; ++i) {
     for (int j=0; j<3; ++j) { 
-      std::cout << A[i][j] << " "; 
+      std::cout << std::setprecision(4) << A[i][j] << " "; 
     }
     std::cout << std::endl; 
   }
@@ -246,10 +253,10 @@ sort(
     }
   }
 }
-/*
+
 void
 perturb(
-  double (&Q)[3][3], double (&D)[3][3])
+  double (&Q)[3][3], double (&D)[3][3], double(&P)[3][3])
 {
   // sgs stress eigenvalue perturbation
 
@@ -257,25 +264,18 @@ perturb(
   const double Lambda1 = D[0][0];
   const double Lambda2 = D[1][1];
   const double Lambda3 = D[2][2];
-  if ( biasTowards == 1 ) {
-    BinvXt_[0] =  2.0/3.0;
-    BinvXt_[1] = -1.0/3.0;
-    BinvXt_[2] = -1.0/3.0;
-  }
-  else if ( biasTowards == 2 ) {
-    BinvXt_[0] =  1.0/6.0;
-    BinvXt_[1] =  1.0/6.0;
-    BinvXt_[2] = -1.0/3.0;
-  }
-  else if ( biasTowards == 3 ) {
-    BinvXt_[0] = 0.0;
-    BinvXt_[1] = 0.0;
-    BinvXt_[2] = 0.0;
-  }
 
-  const double pLambda1 = (1.0 - deltaB_)*Lambda1 + deltaB_*BinvXt_[0];
-  const double pLambda2 = (1.0 - deltaB_)*Lambda2 + deltaB_*BinvXt_[1];
-  const double pLambda3 = (1.0 - deltaB_)*Lambda3 + deltaB_*BinvXt_[2];
+  // extract resolved stress eigenvalues
+  const double L_res1 = P[0][0];
+  const double L_res2 = P[1][1];
+  const double L_res3 = P[2][2];
+
+  const double deltaB_ = 1.0;
+
+  // perturbed sgs eigenvalues
+  const double pLambda1 = (1.0 - deltaB_)*Lambda1 + deltaB_*L_res1;
+  const double pLambda2 = (1.0 - deltaB_)*Lambda2 + deltaB_*L_res2;
+  const double pLambda3 = (1.0 - deltaB_)*Lambda3 + deltaB_*L_res3;
 
   D[0][0] = pLambda1;
   D[1][1] = pLambda2;
@@ -319,4 +319,3 @@ matrix_matrix_multiply(
     }
   }
 }
-*/
