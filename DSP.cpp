@@ -6,6 +6,7 @@
 #include<iostream>
 #include<cmath>
 #include<iomanip>
+#include<fstream>
 
 void print(double (&A)[3][3]);
 void form_anisotensor(double (&A)[3][3], double (&B)[3][3]);
@@ -17,7 +18,7 @@ void sort(
   double (&Q)[3][3], double (&D)[3][3]);
 
 void perturb(
-  double (&Q)[3][3], double (&D)[3][3], double (&P)[3][3]);
+  double (&D)[3][3], double (&P)[3][3], double &deltaB);
 
 void form_perturbed_stress(
   const double (&D)[3][3], const double (&Q)[3][3], double (&A)[3][3]);
@@ -26,11 +27,19 @@ void matrix_matrix_multiply(
   const double (&A)[3][3], const double (&B)[3][3], double (&C)[3][3]);
 
 int main() {
-
+  
+  double deltaB;
+  std::cout << "Enter the value of deltaB" << std::endl;
+  std::cin >> deltaB;
   // define and declare sgs and resolved tensors
+  /*
   double S_sgs[3][3] = { {2.0,-1.0,0.0}, 
                          {-1.0,2.0,-1.0}, 
                          {0.0,-1.0,2.0} }; 
+  */
+  double S_sgs[3][3] = { {1,0,0},
+                         {0,1,0},
+                         {0,0,1} };
   double S_res[3][3] = { {24.0, 14.0, 4.0}, 
                          {14.0, 13.0, 17.0}, 
                          {4.0, 17.0, 51.0} }; 
@@ -40,6 +49,23 @@ int main() {
   // form sgs and resolved anisotropy tensors
   form_anisotensor(S_sgs, A_sgs);
   form_anisotensor(S_res, A_res);
+
+  // write sgs anisotropy tensor to file
+  std::ofstream write_output("A_sgs.dat");
+  for (int i=0; i<3; ++i) {
+    for (int j=0; j<3; ++j) {
+      write_output << A_sgs[i][j] << " ";
+    }
+    std::cout << std::endl; 
+  }
+
+  std::ofstream write_output2("A_res.dat");
+  for (int i=0; i<3; ++i) {
+    for (int j=0; j<3; ++j) {
+      write_output2 << A_res[i][j] << " ";
+    }
+    std::cout << std::endl; 
+  }
 
   // print to check
   /*
@@ -73,11 +99,20 @@ int main() {
   std::cout << "The sgs eigenvectors are:" << std::endl;
   print(Q_sgs);
   */
-  perturb(Q_sgs, D_sgs, D_res);
+  perturb(D_sgs, D_res, deltaB);
   form_perturbed_stress(D_sgs, Q_sgs, A_sgs);
 
   std::cout << "The perturbed sgs anisotropy tensor is:" << std::endl;
   print(A_sgs);  
+
+  // write perturbed sgs anisotropy tensor to file
+  std::ofstream write_output1("A_sgsp.dat");
+  for (int i=0; i<3; ++i) {
+    for (int j=0; j<3; ++j) {
+      write_output1 << A_sgs[i][j] << " ";
+    }
+    std::cout << std::endl; 
+  }
 
   return 0;
 }
@@ -257,7 +292,7 @@ sort(
 
 void
 perturb(
-  double (&Q)[3][3], double (&D)[3][3], double(&P)[3][3])
+  double (&D)[3][3], double(&P)[3][3], double &deltaB)
 {
   // sgs stress eigenvalue perturbation
 
@@ -271,12 +306,10 @@ perturb(
   const double L_res2 = P[1][1];
   const double L_res3 = P[2][2];
 
-  const double deltaB_ = 0.789;
-
   // perturbed sgs eigenvalues
-  const double pLambda1 = (1.0 - deltaB_)*Lambda1 + deltaB_*L_res1;
-  const double pLambda2 = (1.0 - deltaB_)*Lambda2 + deltaB_*L_res2;
-  const double pLambda3 = (1.0 - deltaB_)*Lambda3 + deltaB_*L_res3;
+  const double pLambda1 = (1.0 - deltaB)*Lambda1 + deltaB*L_res1;
+  const double pLambda2 = (1.0 - deltaB)*Lambda2 + deltaB*L_res2;
+  const double pLambda3 = (1.0 - deltaB)*Lambda3 + deltaB*L_res3;
 
   D[0][0] = pLambda1;
   D[1][1] = pLambda2;
